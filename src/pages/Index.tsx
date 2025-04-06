@@ -3,14 +3,16 @@ import { useState } from "react";
 import { CVUploader } from "@/components/CVUploader";
 import { CVAnalysisResults } from "@/components/CVAnalysisResults";
 import { JobSearch } from "@/components/JobSearch";
+import { SkillInput } from "@/components/SkillInput";
 import { CVAnalysisResult, Skill } from "@/types";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowUp } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Index = () => {
   const [analysisResult, setAnalysisResult] = useState<CVAnalysisResult | null>(null);
   const [userSkills, setUserSkills] = useState<Skill[]>([]);
-  const [showJobs, setShowJobs] = useState(false);
+  const [currentView, setCurrentView] = useState<"cv-analysis" | "skills-edit" | "job-search">("cv-analysis");
 
   const handleAnalysisComplete = (result: CVAnalysisResult) => {
     setAnalysisResult(result);
@@ -25,8 +27,16 @@ const Index = () => {
     }
   };
 
+  const handleMoveToSkillsEdit = () => {
+    setCurrentView("skills-edit");
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   const handleMoveToJobSearch = () => {
-    setShowJobs(true);
+    setCurrentView("job-search");
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
@@ -34,7 +44,15 @@ const Index = () => {
   };
 
   const handleBackToAnalysis = () => {
-    setShowJobs(false);
+    setCurrentView("cv-analysis");
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleBackToSkills = () => {
+    setCurrentView("skills-edit");
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
@@ -46,17 +64,21 @@ const Index = () => {
       <div className="max-w-6xl mx-auto">
         <header className="text-center mb-12">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            {showJobs ? "Job Match Finder" : "CV Skills Analyzer"}
+            {currentView === "job-search" ? "Job Match Finder" : 
+             currentView === "skills-edit" ? "Skills Profile" : 
+             "CV Skills Analyzer"}
           </h1>
           <p className="text-slate-600 max-w-2xl mx-auto">
-            {showJobs 
+            {currentView === "job-search" 
               ? "Find jobs that match your skills and experience"
+              : currentView === "skills-edit"
+              ? "Review and edit your skills before searching for matching jobs"
               : "Upload your CV to get a detailed analysis of your skills and customized recommendations"
             }
           </p>
         </header>
 
-        {!showJobs ? (
+        {currentView === "cv-analysis" && (
           <>
             <div className="grid md:grid-cols-2 gap-8">
               <div className="bg-white p-6 rounded-xl shadow-sm">
@@ -83,6 +105,42 @@ const Index = () => {
             {userSkills.length > 0 && (
               <div className="mt-8 flex justify-center">
                 <Button 
+                  onClick={handleMoveToSkillsEdit}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  size="lg"
+                >
+                  Review & Edit Skills
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+
+        {currentView === "skills-edit" && (
+          <>
+            <div className="mb-6">
+              <Button 
+                variant="outline" 
+                onClick={handleBackToAnalysis}
+              >
+                ← Back to CV Analysis
+              </Button>
+            </div>
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Review & Edit Your Skills</CardTitle>
+                <CardDescription>
+                  Add, edit or remove skills before finding matching jobs
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SkillInput skills={userSkills} setSkills={setUserSkills} />
+              </CardContent>
+            </Card>
+            {userSkills.length > 0 && (
+              <div className="flex justify-center">
+                <Button 
                   onClick={handleMoveToJobSearch}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   size="lg"
@@ -93,14 +151,16 @@ const Index = () => {
               </div>
             )}
           </>
-        ) : (
+        )}
+
+        {currentView === "job-search" && (
           <>
             <div className="mb-6">
               <Button 
                 variant="outline" 
-                onClick={handleBackToAnalysis}
+                onClick={handleBackToSkills}
               >
-                ← Back to CV Analysis
+                ← Back to Skills Editor
               </Button>
             </div>
             <JobSearch userSkills={userSkills} />

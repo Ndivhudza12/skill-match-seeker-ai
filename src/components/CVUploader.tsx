@@ -37,11 +37,12 @@ export function CVUploader({ onAnalysisComplete, onSkillsExtracted }: CVUploader
     try {
       // Read file as text
       const text = await readFileAsText(file);
+      setCvText(text);
       
       // Extract skills from CV
       if (onSkillsExtracted) {
         const extractedSkills = await extractSkillsFromCV(file);
-        onSkillsExtracted(extractedSkills);
+        onSkillsExtracted(extractedSkills as Skill[]);
       }
       
       // Analyze CV
@@ -96,7 +97,7 @@ export function CVUploader({ onAnalysisComplete, onSkillsExtracted }: CVUploader
       // Extract skills
       if (onSkillsExtracted) {
         const extractedSkills = await extractSkillsFromCV(file);
-        onSkillsExtracted(extractedSkills);
+        onSkillsExtracted(extractedSkills as Skill[]);
       }
       
       // Analyze pasted CV text

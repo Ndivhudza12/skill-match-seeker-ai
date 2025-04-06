@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Job, Skill } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -194,8 +193,7 @@ function JobCard({ job, userSkills }: { job: Job; userSkills: Skill[] }) {
             </div>
             <Progress 
               value={matchScore} 
-              className="h-1.5 w-32 mt-1" 
-              indicatorClassName={getMatchScoreProgressClass(matchScore)}
+              className={`h-1.5 w-32 mt-1 ${getMatchScoreProgressClass(matchScore)}`}
             />
           </div>
         </div>

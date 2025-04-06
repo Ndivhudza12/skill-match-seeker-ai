@@ -17,3 +17,16 @@ export interface CVAnalysisResult {
   skillsAnalysis: SkillAnalysis[];
   suggestedImprovements: string[];
 }
+
+export interface Job {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  requirements: string[];
+  skills: string[];
+  salary: string;
+  matchScore: number;
+  postedDate: string;
+}

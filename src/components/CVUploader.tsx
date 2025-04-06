@@ -5,14 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Upload } from "lucide-react";
-import { analyzeCVContent } from "@/utils/cvParser";
-import { CVAnalysisResult } from "@/types";
+import { analyzeCVContent, extractSkillsFromCV } from "@/utils/cvParser";
+import { CVAnalysisResult, Skill } from "@/types";
 
 interface CVUploaderProps {
   onAnalysisComplete: (result: CVAnalysisResult) => void;
+  onSkillsExtracted?: (skills: Skill[]) => void;
 }
 
-export function CVUploader({ onAnalysisComplete }: CVUploaderProps) {
+export function CVUploader({ onAnalysisComplete, onSkillsExtracted }: CVUploaderProps) {
   const { toast } = useToast();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [cvText, setCvText] = useState("");
@@ -37,6 +38,12 @@ export function CVUploader({ onAnalysisComplete }: CVUploaderProps) {
       // Read file as text
       const text = await readFileAsText(file);
       
+      // Extract skills from CV
+      if (onSkillsExtracted) {
+        const extractedSkills = await extractSkillsFromCV(file);
+        onSkillsExtracted(extractedSkills);
+      }
+      
       // Analyze CV
       const analysisResult = await analyzeCVContent(text);
       
@@ -56,7 +63,7 @@ export function CVUploader({ onAnalysisComplete }: CVUploaderProps) {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [toast, onAnalysisComplete]);
+  }, [toast, onAnalysisComplete, onSkillsExtracted]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
@@ -82,6 +89,16 @@ export function CVUploader({ onAnalysisComplete }: CVUploaderProps) {
     setIsAnalyzing(true);
     
     try {
+      // Create a mock file for skill extraction
+      const blob = new Blob([cvText], { type: 'text/plain' });
+      const file = new File([blob], 'cv.txt', { type: 'text/plain' });
+      
+      // Extract skills
+      if (onSkillsExtracted) {
+        const extractedSkills = await extractSkillsFromCV(file);
+        onSkillsExtracted(extractedSkills);
+      }
+      
       // Analyze pasted CV text
       const analysisResult = await analyzeCVContent(cvText);
       

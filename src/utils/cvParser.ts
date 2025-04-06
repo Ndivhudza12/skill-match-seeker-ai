@@ -38,40 +38,28 @@ const DETECTABLE_SKILLS = [
 
 // Suggestions based on analysis scores
 const IMPROVEMENT_SUGGESTIONS = [
-  {
-    trigger: (results: CVAnalysisResult) => {
-      return !results.skillsAnalysis.some(s => s.strength === "Strong");
-    },
-    title: "Add more quantifiable achievements to your experience section.",
-    description: "Example: \"Increased user engagement by 45% through redesigned navigation\""
+  (results: CVAnalysisResult) => {
+    return !results.skillsAnalysis.some(s => s.strength === "Strong") 
+      ? "Add more quantifiable achievements to your experience section. Example: \"Increased user engagement by 45% through redesigned navigation\"" 
+      : null;
   },
-  {
-    trigger: (results: CVAnalysisResult) => {
-      return results.skillsAnalysis.some(s => s.name === "Product Strategy" && s.strength === "Weak");
-    },
-    title: "Strengthen your product strategy skills to match senior positions.",
-    description: "Consider adding relevant courses or projects that demonstrate strategic thinking."
+  (results: CVAnalysisResult) => {
+    return results.skillsAnalysis.some(s => s.name === "Product Strategy" && s.strength === "Weak")
+      ? "Strengthen your product strategy skills to match senior positions. Consider adding relevant courses or projects that demonstrate strategic thinking."
+      : null;
   },
-  {
-    trigger: (results: CVAnalysisResult) => {
-      return results.overallScore < 80;
-    },
-    title: "Your summary is too generic - tailor it to highlight your unique strengths.",
-    description: "Focus on what differentiates you from other UX designers."
+  (results: CVAnalysisResult) => {
+    return results.overallScore < 80
+      ? "Your summary is too generic - tailor it to highlight your unique strengths. Focus on what differentiates you from other UX designers."
+      : null;
   },
-  {
-    trigger: (results: CVAnalysisResult) => {
-      return !results.skillsAnalysis.some(s => s.name === "User Research" && s.strength !== "Weak");
-    },
-    title: "Improve your user research section by including specific methodologies used.",
-    description: "Mention specific research methods like usability testing, interviews, or surveys you've conducted."
+  (results: CVAnalysisResult) => {
+    return !results.skillsAnalysis.some(s => s.name === "User Research" && s.strength !== "Weak")
+      ? "Improve your user research section by including specific methodologies used. Mention specific research methods like usability testing, interviews, or surveys you've conducted."
+      : null;
   },
-  {
-    trigger: (results: CVAnalysisResult) => {
-      return true; // Always suggest this one
-    },
-    title: "Include more specific examples of projects you've worked on.",
-    description: "Name specific products, features and your contributions to them."
+  (results: CVAnalysisResult) => {
+    return "Include more specific examples of projects you've worked on. Name specific products, features and your contributions to them.";
   },
 ];
 
@@ -121,12 +109,10 @@ export const analyzeCVContent = async (content: string): Promise<CVAnalysisResul
       };
       
       // Add relevant improvement suggestions
-      IMPROVEMENT_SUGGESTIONS.forEach(suggestion => {
-        if (suggestion.trigger(analysisResult)) {
-          analysisResult.suggestedImprovements.push({
-            title: suggestion.title,
-            description: suggestion.description
-          });
+      IMPROVEMENT_SUGGESTIONS.forEach(suggestionFn => {
+        const suggestion = typeof suggestionFn === 'function' ? suggestionFn(analysisResult) : suggestionFn;
+        if (suggestion) {
+          analysisResult.suggestedImprovements.push(suggestion);
         }
       });
       
@@ -135,5 +121,48 @@ export const analyzeCVContent = async (content: string): Promise<CVAnalysisResul
       
       resolve(analysisResult);
     }, 1500);
+  });
+};
+
+// Add extractSkillsFromCV function from user's pasted code
+export const extractSkillsFromCV = async (file: File) => {
+  // This is a placeholder that would be replaced with actual CV parsing logic
+  // For demo purposes, we'll return some mock skills
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      // For this demo, we'll randomly select 5-15 skills from our common list
+      const mockSkills = [];
+      const numSkills = Math.floor(Math.random() * 10) + 5; // 5-15 skills
+      
+      for (let i = 0; i < numSkills; i++) {
+        const skillName = DETECTABLE_SKILLS[Math.floor(Math.random() * DETECTABLE_SKILLS.length)];
+        const yearsOfExperience = Math.floor(Math.random() * 10) + 1; // 1-10 years
+        
+        // Determine level based on years
+        let level: "beginner" | "intermediate" | "advanced" | "expert" = "beginner";
+        if (yearsOfExperience > 7) {
+          level = "expert";
+        } else if (yearsOfExperience > 4) {
+          level = "advanced";
+        } else if (yearsOfExperience > 2) {
+          level = "intermediate";
+        }
+        
+        mockSkills.push({
+          id: uuid(),
+          name: skillName,
+          yearsOfExperience,
+          level
+        });
+      }
+      
+      setTimeout(() => {
+        resolve(mockSkills);
+      }, 500);
+    };
+    
+    reader.readAsText(file);
   });
 };

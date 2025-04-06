@@ -74,12 +74,7 @@ export function CVAnalysisResults({ analysisResult }: CVAnalysisResultsProps) {
                 <AlertCircle size={18} className="text-amber-500" />
               </div>
               <div className="space-y-1">
-                <p className="font-medium text-sm">{improvement.title}</p>
-                {improvement.description && (
-                  <p className="text-sm text-slate-500">
-                    {improvement.description}
-                  </p>
-                )}
+                <p className="font-medium text-sm">{improvement}</p>
               </div>
             </div>
           ))}

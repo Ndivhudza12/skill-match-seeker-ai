@@ -10,12 +10,15 @@ export interface SkillAnalysis {
   name: string;
   strength: "Strong" | "Medium" | "Weak";
   score: number; // 0-100
+  yearsOfExperience?: number;
 }
 
 export interface CVAnalysisResult {
   overallScore: number;
   skillsAnalysis: SkillAnalysis[];
   suggestedImprovements: string[];
+  workExperience?: {company: string, title: string, years: number}[];
+  education?: {degree: string, institution: string, year: string}[];
 }
 
 export interface Job {

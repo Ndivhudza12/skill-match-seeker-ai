@@ -1,5 +1,5 @@
 
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, AlertCircle, Building, GraduationCap, Clock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { CVAnalysisResult } from "@/types";
 
@@ -8,7 +8,7 @@ interface CVAnalysisResultsProps {
 }
 
 export function CVAnalysisResults({ analysisResult }: CVAnalysisResultsProps) {
-  const { overallScore, skillsAnalysis, suggestedImprovements } = analysisResult;
+  const { overallScore, skillsAnalysis, suggestedImprovements, workExperience, education } = analysisResult;
   
   // Function to determine strength color
   const getStrengthColor = (strength: string) => {
@@ -43,7 +43,14 @@ export function CVAnalysisResults({ analysisResult }: CVAnalysisResultsProps) {
           {skillsAnalysis.map((skill) => (
             <div key={skill.name} className="space-y-1.5">
               <div className="flex justify-between text-sm">
-                <span className="font-medium">{skill.name}</span>
+                <div>
+                  <span className="font-medium">{skill.name}</span>
+                  {skill.yearsOfExperience && (
+                    <span className="text-gray-500 text-xs ml-2">
+                      {skill.yearsOfExperience} {skill.yearsOfExperience === 1 ? 'year' : 'years'}
+                    </span>
+                  )}
+                </div>
                 <span 
                   className={`font-medium ${
                     skill.strength === "Strong" ? "text-green-600" : 
@@ -64,6 +71,61 @@ export function CVAnalysisResults({ analysisResult }: CVAnalysisResultsProps) {
           ))}
         </div>
       </div>
+
+      {workExperience && workExperience.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium mb-4">Work Experience</h3>
+          <div className="space-y-3">
+            {workExperience.map((work, index) => (
+              <div key={index} className="bg-slate-50 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 bg-blue-100 p-2 rounded-full">
+                    <Building size={16} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">{work.company}</h4>
+                    <div className="flex flex-wrap gap-x-3 text-sm text-slate-600 mt-1">
+                      <span className="flex items-center">
+                        {work.title}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={14} />
+                        {work.years} {work.years === 1 ? 'year' : 'years'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {education && education.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium mb-4">Education</h3>
+          <div className="space-y-3">
+            {education.map((edu, index) => (
+              <div key={index} className="bg-slate-50 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 bg-purple-100 p-2 rounded-full">
+                    <GraduationCap size={16} className="text-purple-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">{edu.institution}</h4>
+                    <div className="flex flex-wrap gap-x-3 text-sm text-slate-600 mt-1">
+                      <span>{edu.degree}</span>
+                      {edu.year !== "Not specified" && (
+                        <span className="text-slate-500">{edu.year}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <div>
         <h3 className="text-lg font-medium mb-4">Suggested Improvements</h3>

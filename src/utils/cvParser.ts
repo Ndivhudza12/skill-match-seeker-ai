@@ -85,7 +85,7 @@ const IMPROVEMENT_SUGGESTIONS = [
   },
 ];
 
-// Improved CV content analysis with actual text processing
+// Enhanced CV content analysis with actual text processing
 export const analyzeCVContent = async (content: string): Promise<CVAnalysisResult> => {
   return new Promise((resolve) => {
     // Simulate analysis delay
@@ -93,6 +93,12 @@ export const analyzeCVContent = async (content: string): Promise<CVAnalysisResul
       // Extract detected skills from content
       const detectedSkills: SkillAnalysis[] = [];
       const normalizedContent = content.toLowerCase();
+      
+      // Extract companies and work experience
+      const companies = extractCompanies(normalizedContent);
+      
+      // Extract education information
+      const education = extractEducation(normalizedContent);
       
       // Count occurrences of skills in content
       const skillMatches = DETECTABLE_SKILLS.map(skill => {
@@ -114,6 +120,7 @@ export const analyzeCVContent = async (content: string): Promise<CVAnalysisResul
       // Create skill analysis for each detected skill
       topSkills.forEach(match => {
         const score = calculateSkillScore(match.count, match.contextHints, content.length);
+        const yearsOfExperience = estimateYearsOfExperience(normalizedContent, match.skill.toLowerCase());
         
         let strength: "Strong" | "Medium" | "Weak";
         if (score >= 70) {
@@ -127,7 +134,8 @@ export const analyzeCVContent = async (content: string): Promise<CVAnalysisResul
         detectedSkills.push({
           name: match.skill,
           strength,
-          score
+          score,
+          yearsOfExperience
         });
       });
       
@@ -144,7 +152,9 @@ export const analyzeCVContent = async (content: string): Promise<CVAnalysisResul
       const analysisResult: CVAnalysisResult = {
         overallScore,
         skillsAnalysis: detectedSkills,
-        suggestedImprovements: []
+        suggestedImprovements: [],
+        workExperience: companies,
+        education
       };
       
       // Add relevant improvement suggestions
@@ -301,6 +311,140 @@ function inferSkillsFromJobTitles(text: string): Skill[] {
   return inferredSkills;
 }
 
+// Helper function to extract company experience
+function extractCompanies(text: string): {company: string, title: string, years: number}[] {
+  const companies: {company: string, title: string, years: number}[] = [];
+  
+  // Common company indicators
+  const companyPatterns = [
+    /(?:worked (?:at|for)|employed (?:at|by))\s+([A-Z][A-Za-z0-9\s&.,-]+?)(?:\s+(?:as|from|in|for))/i,
+    /(?:experience at|position at|role at)\s+([A-Z][A-Za-z0-9\s&.,-]+?)(?:\s+(?:as|from|in|for))/i,
+    /([A-Z][A-Za-z0-9\s&.,-]+?)\s+(?:\(|\||\-|–)\s*([A-Za-z\s]+)(?:\s*\||\s*\-|\s*–|\s*:)\s*(\d{4})/i,
+    /([A-Z][A-Za-z0-9\s&.,-]+?),\s*([A-Za-z\s]+),\s*(\d{1,2}\+?\s*years?|\d{4}\s*-\s*(?:Present|\d{4}))/i
+  ];
+  
+  // Title patterns
+  const titlePatterns = [
+    /(?:as|position|role|title)(?:\s+(?:a|an|of))?\s+([A-Za-z\s]+)(?:\s+at|with|in|for)/i,
+    /([A-Za-z\s]+\s+(?:Developer|Engineer|Designer|Manager|Director|Analyst|Consultant|Architect))/i
+  ];
+  
+  // Year patterns
+  const yearPatterns = [
+    /(\d{1,2})\+?\s*years?/i,
+    /(\d{4})\s*-\s*(?:Present|\d{4})/i
+  ];
+  
+  // Find potential companies
+  let matches: RegExpMatchArray | null = null;
+  for (const pattern of companyPatterns) {
+    const patternMatches = Array.from(text.matchAll(new RegExp(pattern, 'gi')));
+    if (patternMatches.length > 0) {
+      for (const match of patternMatches) {
+        let company = match[1]?.trim();
+        if (company && company.length > 2) {
+          // Extract title
+          let title = "Not specified";
+          for (const titlePattern of titlePatterns) {
+            const titleMatch = text.match(titlePattern);
+            if (titleMatch && titleMatch[1]) {
+              title = titleMatch[1].trim();
+              break;
+            }
+          }
+          
+          // Extract years
+          let years = 1;
+          for (const yearPattern of yearPatterns) {
+            const yearMatch = text.match(yearPattern);
+            if (yearMatch && yearMatch[1]) {
+              if (yearPattern.source.includes('\\d{4}')) {
+                // Date range pattern (approximate years from range)
+                years = 2; // Default if we can't calculate exact
+              } else {
+                years = parseInt(yearMatch[1], 10);
+              }
+              break;
+            }
+          }
+          
+          companies.push({
+            company,
+            title,
+            years
+          });
+        }
+      }
+    }
+  }
+  
+  // If we couldn't extract companies but have "experience" mentions, create generic entries
+  if (companies.length === 0) {
+    const expMatches = text.match(/(\d+)\+?\s*years?\s*(?:of)?\s*experience/gi);
+    if (expMatches && expMatches.length > 0) {
+      const years = parseInt(expMatches[0].match(/\d+/) || ['3'], 10);
+      companies.push({
+        company: "Professional Experience",
+        title: "Various Positions",
+        years
+      });
+    }
+  }
+  
+  return companies;
+}
+
+// Helper function to extract education information
+function extractEducation(text: string): {degree: string, institution: string, year: string}[] {
+  const education: {degree: string, institution: string, year: string}[] = [];
+  
+  // Education patterns
+  const eduPatterns = [
+    /(?:Bachelor|Master|PhD|BSc|MSc|MBA|BA|MA|BEng|MEng)(?:'s|s)?\s+(?:of|in|degree in)?\s+([A-Za-z\s]+)(?:\s+from|\s+at|\s+-|\s+\|)?\s+([A-Z][A-Za-z\s&.,-]+?)(?:[,.]|\s+in|\s+\d{4})/i,
+    /([A-Z][A-Za-z\s&.,-]+?)\s+University[,.\s]+([A-Za-z\s]+?)(?:degree|program|course)/i
+  ];
+  
+  // Year pattern
+  const yearPattern = /(?:graduated|completed|earned|received|conferred)\s+in\s+(\d{4})/i;
+  
+  // Find education information
+  for (const pattern of eduPatterns) {
+    const matches = Array.from(text.matchAll(new RegExp(pattern, 'gi')));
+    if (matches.length > 0) {
+      for (const match of matches) {
+        let degree = match[1]?.trim() || "Degree";
+        let institution = match[2]?.trim() || "University";
+        
+        // Extract graduation year if available
+        let year = "Not specified";
+        const yearMatch = text.match(yearPattern);
+        if (yearMatch && yearMatch[1]) {
+          year = yearMatch[1];
+        }
+        
+        if (degree && institution) {
+          education.push({
+            degree,
+            institution,
+            year
+          });
+        }
+      }
+    }
+  }
+  
+  // Generic fallback if we couldn't extract specific education
+  if (education.length === 0 && text.match(/(?:university|college|education|degree|graduated)/i)) {
+    education.push({
+      degree: "Higher Education",
+      institution: "University",
+      year: "Not specified"
+    });
+  }
+  
+  return education;
+}
+
 // Helper function to calculate skill score based on mentions
 function calculateSkillScore(mentions: number, contextualMentions: number, contentLength: number): number {
   // Base score from mentions, adjusted for document length
@@ -324,8 +468,8 @@ function assessContentQuality(content: string): number {
   else if (length < 500) score -= 15;
   
   // Check for quantifiable achievements (numbers, percentages)
-  const achievementPatterns = [/increased|improved|reduced|achieved|delivered|managed|led|created|built|developed/gi];
-  const quantifierPatterns = [/\d+%|\$\d+|\d+ times|\d+ team members|\d+ projects/gi];
+  const achievementPatterns = /increased|improved|reduced|achieved|delivered|managed|led|created|built|developed/gi;
+  const quantifierPatterns = /\d+%|\$\d+|\d+ times|\d+ team members|\d+ projects/gi;
   
   const achievements = content.match(achievementPatterns) || [];
   const quantifiers = content.match(quantifierPatterns) || [];
@@ -352,3 +496,4 @@ function readFileAsText(file: File): Promise<string> {
     reader.readAsText(file);
   });
 }
+

@@ -336,7 +336,6 @@ function extractCompanies(text: string): {company: string, title: string, years:
   ];
   
   // Find potential companies
-  let matches: RegExpMatchArray | null = null;
   for (const pattern of companyPatterns) {
     const patternMatches = Array.from(text.matchAll(new RegExp(pattern, 'gi')));
     if (patternMatches.length > 0) {
@@ -382,12 +381,15 @@ function extractCompanies(text: string): {company: string, title: string, years:
   if (companies.length === 0) {
     const expMatches = text.match(/(\d+)\+?\s*years?\s*(?:of)?\s*experience/gi);
     if (expMatches && expMatches.length > 0) {
-      const years = parseInt(expMatches[0].match(/\d+/) || ['3'], 10);
-      companies.push({
-        company: "Professional Experience",
-        title: "Various Positions",
-        years
-      });
+      const match = expMatches[0].match(/\d+/);
+      if (match && match[0]) {
+        const years = parseInt(match[0], 10);
+        companies.push({
+          company: "Professional Experience",
+          title: "Various Positions",
+          years
+        });
+      }
     }
   }
   
